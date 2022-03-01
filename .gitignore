@@ -1,0 +1,5 @@
+/.idea/
+/loan-application.iml
+/target/
+instr.txt
+dependency-reduced-pom.xml

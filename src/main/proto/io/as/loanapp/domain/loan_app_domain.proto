@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package io.as.loanapp.domain;
+
+option java_outer_classname = "LoanAppDomain";
+
+enum LoanAppDomainStatus {
+  STATUS_UNKNOWN = 0;
+  STATUS_WAITING_FOR_REVIEW = 1;
+  STATUS_IN_REVIEW = 2;
+  STATUS_APPROVED = 3;
+  STATUS_DECLINED = 4;
+}
+
+message LoanAppDomainState {
+  string client_name = 1;
+  string client_surname = 2;
+  string client_ssn = 3;
+  string client_email = 4;
+  int64 client_monthly_income_cents = 5;
+
+  int64 loan_amount_cents = 6;
+  int32 loan_duration_months = 7;
+
+  LoanAppDomainStatus status = 8;
+
+  string decline_reason = 9;
+
+  google.protobuf.Timestamp last_update_timestamp = 10;
+}
+
+message Submitted {
+  string loan_app_id = 1;
+  string client_name = 2;
+  string client_surname = 3;
+  string client_ssn = 4;
+  string client_email = 5;
+  int64 client_monthly_income_cents = 6;
+
+  int64 loan_amount_cents = 7;
+  int32 loan_duration_months = 8;
+
+  google.protobuf.Timestamp update_timestamp = 9;
+}
+
+message ReviewStarted {
+  string loan_app_id = 1;
+  google.protobuf.Timestamp update_timestamp = 2;
+}
+
+message ReviewApproved {
+  string loan_app_id = 1;
+  google.protobuf.Timestamp update_timestamp = 2;
+}
+
+message ReviewDeclined {
+  string loan_app_id = 1;
+  string reason = 2;
+  google.protobuf.Timestamp update_timestamp = 3;
+}

@@ -1,0 +1,115 @@
+// This is the public API offered by your entity.
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "akkaserverless/annotations.proto";
+import "google/api/annotations.proto";
+
+package io.as.loanapp.api;
+
+option java_outer_classname = "LoanAppApi";
+
+enum LoanAppStatus {
+  STATUS_UNKNOWN = 0;
+  STATUS_WAITING_FOR_REVIEW = 1;
+  STATUS_IN_REVIEW = 2;
+  STATUS_APPROVED = 3;
+  STATUS_DECLINED = 4;
+}
+
+message LoanAppState {
+  string client_name = 1;
+  string client_surname = 2;
+  string client_ssn = 3;
+  string client_email = 4;
+  int64 client_monthly_income_cents = 5;
+
+  int64 loan_amount_cents = 6;
+  int32 loan_duration_months = 7;
+
+  LoanAppStatus status = 8;
+
+  string decline_reason = 9;
+
+  google.protobuf.Timestamp last_update_timestamp = 10;
+}
+
+message SubmitCommand {
+  string loan_app_id = 1 [(akkaserverless.field).entity_key = true];
+
+  string client_name = 2;
+  string client_surname = 3;
+  string client_ssn = 4;
+  string client_email = 5;
+  int64 client_monthly_income_cents = 6;
+
+  int64 loan_amount_cents = 7;
+  int32 loan_duration_months = 8;
+}
+
+message GetCommand {
+  string loan_app_id = 1 [(akkaserverless.field).entity_key = true];
+}
+
+message StartReviewCommand  {
+  string loan_app_id = 1 [(akkaserverless.field).entity_key = true];
+}
+
+message ApproveReviewCommand  {
+  string loan_app_id = 1 [(akkaserverless.field).entity_key = true];
+}
+
+message DeclineReviewCommand  {
+  string loan_app_id = 1 [(akkaserverless.field).entity_key = true];
+  string reason = 2;
+}
+
+service LoanAppService {
+
+  option (akkaserverless.codegen) = {
+    event_sourced_entity: {
+      name: "io.as.loanapp.domain.LoanAppEntity"
+      entity_type: "loanapp"
+      state: "io.as.loanapp.domain.LoanAppDomainState"
+      events: [
+        "io.as.loanapp.domain.Submitted",
+        "io.as.loanapp.domain.ReviewStarted",
+        "io.as.loanapp.domain.ReviewApproved",
+        "io.as.loanapp.domain.ReviewDeclined"
+      ]
+    }
+  };
+  rpc Submit(SubmitCommand) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/loanapp/{loan_app_id}"
+      body: "*"
+    };
+  }
+
+  rpc Get(GetCommand) returns (LoanAppState) {
+    option (google.api.http) = {
+      get: "/loanapp/{loan_app_id}"
+    };
+  }
+  rpc StartReview(StartReviewCommand) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/loanapp/{loan_app_id}/review/start"
+      body: "*"
+    };
+  }
+
+  rpc ApproveReview(ApproveReviewCommand) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/loanapp/{loan_app_id}/review/approve"
+      body: "*"
+    };
+  }
+
+  rpc DeclineReview(DeclineReviewCommand) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/loanapp/{loan_app_id}/review/decline"
+      body: "*"
+    };
+  }
+}
