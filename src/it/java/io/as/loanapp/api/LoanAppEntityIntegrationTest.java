@@ -7,6 +7,9 @@ import io.as.loanapp.Main;
 import io.as.loanapp.domain.LoanAppDomain;
 import io.as.loanapp.domain.LoanAppEntity;
 import io.as.loanapp.domain.LoanAppEntityTestKit;
+import io.as.loanapp.view.LoanAppByStatus;
+import io.as.loanapp.view.LoanAppByStatusClient;
+import io.as.loanapp.view.LoanAppByStatusModel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.junit.ClassRule;
@@ -38,9 +41,11 @@ public class LoanAppEntityIntegrationTest {
    * Use the generated gRPC client to call the service through the Akka Serverless proxy.
    */
   private final LoanAppService client;
+  private final LoanAppByStatus view;
 
   public LoanAppEntityIntegrationTest() {
     client = testKit.getGrpcClient(LoanAppService.class);
+    view = testKit.getGrpcClient(LoanAppByStatus.class);
   }
 
   private LoanAppApi.SubmitCommand create(String loanAppId, long monthlyIncomeCents, long loanAmountCents, int loanDurationMonths){
@@ -119,5 +124,36 @@ public class LoanAppEntityIntegrationTest {
     assertGet(loanAppId, LoanAppApi.LoanAppStatus.STATUS_IN_REVIEW);
     client.declineReview(LoanAppApi.DeclineReviewCommand.newBuilder().setLoanAppId(loanAppId).build()).toCompletableFuture().get(5, SECONDS);
     assertGet(loanAppId, LoanAppApi.LoanAppStatus.STATUS_DECLINED);
+  }
+
+  @Test
+  public void viewTest() throws Exception {
+    String loanAppId = UUID.randomUUID().toString();
+    client.submit(create(loanAppId)).toCompletableFuture().get(5, SECONDS);
+    assertView(LoanAppApi.LoanAppStatus.STATUS_WAITING_FOR_REVIEW,1);
+    client.startReview(LoanAppApi.StartReviewCommand.newBuilder().setLoanAppId(loanAppId).build()).toCompletableFuture().get(5, SECONDS);
+    assertView( LoanAppApi.LoanAppStatus.STATUS_IN_REVIEW,1);
+    client.approveReview(LoanAppApi.ApproveReviewCommand.newBuilder().setLoanAppId(loanAppId).build()).toCompletableFuture().get(5, SECONDS);
+    assertView(LoanAppApi.LoanAppStatus.STATUS_APPROVED,1);
+    assertView(LoanAppApi.LoanAppStatus.STATUS_DECLINED,0);
+
+    String loanAppId2 = UUID.randomUUID().toString();
+    client.submit(create(loanAppId2)).toCompletableFuture().get(5, SECONDS);
+    String loanAppId3 = UUID.randomUUID().toString();
+    client.submit(create(loanAppId3)).toCompletableFuture().get(5, SECONDS);
+    assertView(LoanAppApi.LoanAppStatus.STATUS_WAITING_FOR_REVIEW,2);
+    assertView(LoanAppApi.LoanAppStatus.STATUS_IN_REVIEW,0);
+
+  }
+
+  private void assertView(LoanAppApi.LoanAppStatus status, int expectedResults) throws Exception{
+    Thread.sleep(1000);//needed for the view eventual consistent update
+    LoanAppByStatusModel.GetLoanAppsByStatusResponse response =
+            view.getLoanAppsByStatus(LoanAppByStatusModel.GetLoanAppsByStatusRequest.newBuilder()
+                    .setStatusId(status.getNumber()).build())
+                    .toCompletableFuture().get(5,SECONDS);
+    assertNotNull(response);
+    assertEquals(expectedResults,response.getResultsCount());
+    assertFalse(response.getResultsList().stream().filter(l->l.getStatus()!=status).findAny().isPresent());
   }
 }

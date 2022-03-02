@@ -256,3 +256,92 @@ Approve review:
 ```
 curl -XPUT https://odd-mud-5285.us-east1.akkaserverlessapps.com/loanapp/537e52b8-1732-11ec-9621-0242ac130002/review/approve -H "Content-Type: application/json"
 ```
+
+## Create a view
+Create `io/as/loanapp/view` folder in `src/main/proto` folder. <br>
+Create `loan_app_by_status_view.proto` in `src/main/proto/io/as/loanapp/view` folder. <br>
+Create: <br>
+- state
+- request/response
+- service
+
+<i><b>Note</b></i>: `SELECT` result alias `AS results` needs to correspond with `GetLoanAppsByStatusResponse` parameter name `repeated LoanAppViewState results`<br>
+<i><b>Note</b></i>: Currently `enums` are not supported as query parameters ([issue 1141](https://github.com/lightbend/akkaserverless-framework/issues/1141)) so enum `number` value is used for query<br>
+<i><b>Tip</b></i>: Check content in `step-2` git branch  
+
+## Compile kickstart maven project to trigger codegen for views
+```
+mvn compile
+```
+
+Compile will generate help classes (`target/generated-*` folders) and skeleton classes<br><br>
+
+`src/main/java/io/as/loanapp/view/LoanAppByStatusView`<br>
+
+In `src/main/java/io/as/loanapp/Main` you need to add view (`LoanAppByStatusView`) initialization:
+```
+ return AkkaServerlessFactory.withComponents(LoanAppEntity::new, LoanAppByStatusView::new);
+```
+
+## Implement view LoanAppByStatusView skeleton class
+<i><b>Tip</b></i>: Check content in `step-2` git branch
+
+## Update integration tests with view tests
+In `io/as/loanapp/view/LoanAppEntityIntegrationTest` class add following:
+* View client:
+```
+private final LoanAppByStatus view;
+```
+* Initialize view client in test class constructor
+```
+view = testKit.getGrpcClient(LoanAppByStatus.class);
+```
+* Add test case
+```
+@Test
+public void viewTest() throws Exception {
+...  
+```
+<i><b>Tip</b></i>: Check content in `step-2` git branch
+
+## Run integration test
+```
+mvn verify -Pit
+```
+
+<i><b>Note</b></i>: Integration tests uses [TestContainers](https://www.testcontainers.org/) to span integration environment so it could require some time to download required containers.
+Also make sure docker is running.
+
+## Run locally
+
+In project root folder there is `docker-compose.yaml` for running `akkaserverless proxy` and (optionally) `google pubsub emulator`.
+<i><b>Tip</b></i>: If you do not require google pubsub emulator then comment it out in `docker-compose.yaml`
+```
+docker-compose up
+```
+
+Start the service:
+
+```
+mvn compile exec:exec
+```
+
+## Test view locally
+Submit loan application:
+```
+curl -XPOST -d '{
+  "loan_app_id": "537e52b8-1732-11ec-9621-0242ac130002",
+  "client_name": "John",
+  "client_surname": "Doe",
+  "client_ssn": "123456",
+  "client_email": "john@doe.io",
+  "client_monthly_income_cents": 60000,
+  "loan_amount_cents": 20000,
+  "loan_duration_months": 12
+}' http://localhost:9000/loanapp/537e52b8-1732-11ec-9621-0242ac130002 -H "Content-Type: application/json"
+```
+
+Get loan application by status:
+```
+curl -XPOST -d {"status_id":1} http://localhost:9000/views/loanapps-by-status -H "Content-Type: application/json"
+```
