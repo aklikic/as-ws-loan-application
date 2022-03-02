@@ -95,14 +95,14 @@ service LoanAppService {
   rpc StartReview(StartReviewCommand) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/loanapp/{loan_app_id}/review/start"
-      body: "*"
+      //body: "*"
     };
   }
 
   rpc ApproveReview(ApproveReviewCommand) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/loanapp/{loan_app_id}/review/approve"
-      body: "*"
+     // body: "*"
     };
   }
 
