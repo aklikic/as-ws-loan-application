@@ -39,7 +39,7 @@ Create: <br>
 - commands
 - service
 
-<i><b>Tip</b></i>: Check content in `step-1` git tag  
+<i><b>Tip</b></i>: Check content in `step-1` git branch  
 
 ## Define persistence (domain) data structure  (GRPC)
 Create `io/as/loanapp/doman` folder in `src/main/proto` folder. <br>
@@ -48,7 +48,7 @@ Create: <br>
 - state
 - events
 
-<i><b>Tip</b></i>: Check content in `step-1` git tag
+<i><b>Tip</b></i>: Check content in `step-1` git branch
 ## Add codegen annotations in API data structure and endpoints (GRPC)
 In `src/main/proto/io/as/loanapp/api/loan_app_api.proto` add AkkaServerless codegen annotations to GRPC service
 ```
@@ -89,17 +89,17 @@ Integration tests:<br>
 `src/it/java/io/as/loanapp/api/LoanAppEntityIntegrationTest`<br>
 
 ## Implement entity skeleton class
-<i><b>Tip</b></i>: Check content in `step-1` git tag
+<i><b>Tip</b></i>: Check content in `step-1` git branch
 
 ## Implement unit test
-<i><b>Tip</b></i>: Check content in `step-1` git tag
+<i><b>Tip</b></i>: Check content in `step-1` git branch
 
 ## Run unit test
 ```
 mvn test
 ```
 ## Implement integration test
-<i><b>Tip</b></i>: Check content in `step-1` git tag
+<i><b>Tip</b></i>: Check content in `step-1` git branch
 
 ## Run integration test
 ```
