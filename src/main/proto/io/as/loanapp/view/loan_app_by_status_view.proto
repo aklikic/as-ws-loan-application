@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package io.as.loanapp.view;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "akkaserverless/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+import "io/as/loanapp/api/loan_app_api.proto";
+import "io/as/loanapp/domain/loan_app_domain.proto";
+
+option java_outer_classname = "LoanAppByStatusModel";
+
+message LoanAppViewState {
+  string loan_app_id = 1 ;
+  string client_ssn = 2 ;
+  api.LoanAppStatus status = 3;
+  int32 status_id = 4;
+  google.protobuf.Timestamp last_update_timestamp = 5;
+}
+
+message GetLoanAppsByStatusRequest {
+  int32 status_id = 1;
+}
+
+message GetLoanAppsByStatusResponse {
+  repeated LoanAppViewState results = 1;
+}
+
+service LoanAppByStatus {
+  option (akkaserverless.codegen) = {
+    view: {}
+  };
+
+  rpc GetLoanAppsByStatus(GetLoanAppsByStatusRequest) returns (GetLoanAppsByStatusResponse) {
+    option (akkaserverless.method).view.query = {
+      query: "SELECT * AS results"
+          "  FROM loan_apps_by_status"
+          " WHERE status_id = :status_id"
+    };
+    option (google.api.http) = {
+      post: "/views/loanapps-by-status",
+      body: "*"
+    };
+  }
+
+  rpc OnSubmitted(domain.Submitted) returns (LoanAppViewState) {
+    option (akkaserverless.method).eventing.in = {
+      event_sourced_entity: "loanapp"
+    };
+    option (akkaserverless.method).view.update = {
+      table: "loan_apps_by_status"
+      transform_updates: true
+    };
+  }
+
+  rpc OnReviewStarted(domain.ReviewStarted) returns (LoanAppViewState) {
+    option (akkaserverless.method).eventing.in = {
+      event_sourced_entity: "loanapp"
+    };
+    option (akkaserverless.method).view.update = {
+      table: "loan_apps_by_status"
+      transform_updates: true
+    };
+  }
+
+  rpc OnReviewApproved(domain.ReviewApproved) returns (LoanAppViewState) {
+    option (akkaserverless.method).eventing.in = {
+      event_sourced_entity: "loanapp"
+    };
+    option (akkaserverless.method).view.update = {
+      table: "loan_apps_by_status"
+      transform_updates: true
+    };
+  }
+
+  rpc OnReviewDeclined(domain.ReviewDeclined) returns (LoanAppViewState) {
+    option (akkaserverless.method).eventing.in = {
+      event_sourced_entity: "loanapp"
+    };
+    option (akkaserverless.method).view.update = {
+      table: "loan_apps_by_status"
+      transform_updates: true
+    };
+  }
+
+  rpc IgnoreOtherEvents(google.protobuf.Any) returns (LoanAppViewState) {
+    option (akkaserverless.method).eventing.in = {
+      event_sourced_entity: "loanapp"
+    };
+    option (akkaserverless.method).view.update = {
+      table: "loan_apps_by_status"
+      transform_updates: true
+    };
+  }
+}
